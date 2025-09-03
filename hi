@@ -1,0 +1,158 @@
+import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+
+export default function App() {
+  const [preguntado, setPreguntado] = useState(false);
+  const [acepto, setAcepto] = useState(false);
+  const [noPos, setNoPos] = useState({ x: 0, y: 0 });
+
+  const nombre = "Juliana";
+  const titulo = `Hola ${nombre}…`;
+  const pregunta = `¿Quieres ser mi novia, ${nombre}?`;
+
+  const moverNo = () => {
+    // Mueve el botón "No" a una posición aleatoria dentro de la ventana
+    const padding = 40;
+    const x = Math.floor(Math.random() * (window.innerWidth - padding * 2)) - (window.innerWidth / 2 - padding);
+    const y = Math.floor(Math.random() * (window.innerHeight - padding * 2)) - (window.innerHeight / 2 - padding);
+    setNoPos({ x, y });
+  };
+
+  const compartir = async () => {
+    const text = `💘 ${pregunta}\n\n– Con amor, yo`;
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "¿Quieres ser mi novia?", text, url });
+      } else {
+        await navigator.clipboard.writeText(`${text}\n${url}`);
+        alert("Mensaje copiado al portapapeles ✨");
+      }
+    } catch (e) {
+      // Silenciar en caso de cancelar
+    }
+  };
+
+  return (
+    <div className="min-h-screen w-full bg-gradient-to-br from-rose-100 via-pink-100 to-fuchsia-100 flex items-center justify-center p-4 select-none">
+      <div className="max-w-xl w-full bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/60 p-6 text-center">
+        <EmojiRain active={acepto} />
+
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-rose-600 mb-2">{titulo}</h1>
+        <p className="text-gray-600 mb-6">Tengo algo importante que preguntarte…</p>
+
+        <AnimatePresence mode="wait">
+          {!acepto && (
+            <motion.div
+              key="pregunta"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+            >
+              <p className="text-2xl sm:text-3xl font-semibold text-rose-700 mb-6">
+                {pregunta}
+              </p>
+
+              <div className="relative h-40 mb-4">
+                <motion.button
+                  onClick={() => {
+                    setPreguntado(true);
+                    setAcepto(true);
+                  }}
+                  className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 top-1/2 bg-rose-600 hover:bg-rose-700 text-white font-semibold px-6 py-3 rounded-2xl shadow-lg"
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Sí 💖
+                </motion.button>
+
+                <motion.button
+                  onMouseEnter={moverNo}
+                  onMouseDown={moverNo}
+                  onClick={moverNo}
+                  className="absolute bg-white text-rose-700 font-medium px-5 py-3 rounded-2xl shadow border border-rose-200"
+                  animate={{ x: noPos.x, y: noPos.y }}
+                  transition={{ type: "spring", stiffness: 120, damping: 12 }}
+                >
+                  No 🙈
+                </motion.button>
+              </div>
+
+              <p className="text-sm text-gray-500">Pista: el botón de "No" es tímido 😉</p>
+            </motion.div>
+          )}
+
+          {acepto && (
+            <motion.div
+              key="acepto"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.25 }}
+              className="space-y-4"
+            >
+              <h2 className="text-3xl font-extrabold text-rose-700">¡Sabía que dirías que sí! 🥰</h2>
+              <p className="text-gray-700">
+                Desde hoy, oficialmente mi novia. Juliana, prometo hacerte reír, cuidarte y mandarte memes cada mañana.
+              </p>
+
+              <div className="flex flex-wrap gap-3 items-center justify-center pt-2">
+                <button
+                  onClick={compartir}
+                  className="px-5 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-semibold shadow"
+                >
+                  Compartir / Copiar 💌
+                </button>
+                <button
+                  onClick={() => {
+                    setAcepto(false);
+                    setPreguntado(false);
+                  }}
+                  className="px-5 py-3 rounded-2xl bg-white border border-rose-200 text-rose-700 font-semibold shadow"
+                >
+                  Volver a preguntar
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+function EmojiRain({ active }: { active: boolean }) {
+  const [particles, setParticles] = useState(
+    Array.from({ length: 24 }, (_, i) => ({ id: i, x: Math.random() }))
+  );
+
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(() => {
+      setParticles((prev) =>
+        prev.map((p) => ({ ...p, x: Math.random() }))
+      );
+    }, 1200);
+    return () => clearInterval(id);
+  }, [active]);
+
+  return (
+    <div className="pointer-events-none fixed inset-0 overflow-hidden">
+      <AnimatePresence>
+        {active &&
+          particles.map((p) => (
+            <motion.div
+              key={p.id}
+              initial={{ y: -40, opacity: 0 }}
+              animate={{ y: window.innerHeight + 40, opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 2.8, repeat: Infinity, delay: p.id * 0.05 }}
+              className="absolute text-3xl"
+              style={{ left: `${p.x * 100}%` }}
+            >
+              {p.id % 3 === 0 ? "💖" : p.id % 3 === 1 ? "💘" : "💞"}
+            </motion.div>
+          ))}
+      </AnimatePresence>
+    </div>
+  );
+}
